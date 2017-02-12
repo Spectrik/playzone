@@ -40,24 +40,16 @@ done
 # encrypt function
 function enc_encrypt
 {
-    # Single file or folder?
-    ENC_INPUT_TYPE=$(file $1 | awk '{print $2}')
+    FILENAME=$(basename $1)
+    tar czf - "$1" | openssl des3 -salt -pass pass:"$3" | dd of="$2/$FILENAME.encrypted" > /dev/null 2>&1
+    return 0
 
-    if [ $ENC_INPUT_TYPE == "directory" ]; then
-        tar czvf - $1 | openssl des3 -salt -pass pass:"$3" | dd of=$2.encrypted > /dev/null 2>&1
-        return 0
-    else
-        openssl des3 -salt -in "$1" -pass pass:"$3" | dd of=$2.encrypted
-        return 0
-    fi
 }
 
 # decrypt function
 function enc_decrypt
 {
-    # TODO
-    # DECRYPT, FIND OUT IF FILE IS TAR. IF YES, UNTAR IT, IF NOT, FINISH
-    :
+    dd if="$1" | openssl des3 -d -pass pass:"$3" | tar -xzf -
 }
 
 # Variables
@@ -93,9 +85,8 @@ fi
 
 ### Decrypting
 if [ "$ENC_DECRYPT" == "yes" ]; then
-    # enc_decrypt $ENC_INPUT_FILES $OUTPUT $ENC_PASSWORD
-    echo $ENC_DECRYPT
-    exit
+    enc_decrypt $ENC_INPUT_FILES $ENC_OUTPUT $ENC_PASSWORD
+    exit 0
 fi
 
 ### Encrypting
@@ -105,7 +96,6 @@ enc_encrypt $ENC_INPUT_FILES $ENC_OUTPUT $ENC_PASSWORD
 
 # Encrypt list of files...
 if [ -n "$ENC_LIST" -a -e "$ENC_LIST" ]; then
-
     while read -r ENC_FILE
     do
         if [ -e "$ENC_FILE" ]; then
@@ -115,7 +105,4 @@ if [ -n "$ENC_LIST" -a -e "$ENC_LIST" ]; then
             continue
         fi
     done < "$ENC_LIST"
-else
-    echo "List with files to encrypt was not found!"
-    exit 1
 fi
