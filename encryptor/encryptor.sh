@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # parse arguments
-while [[ $# -gt 1 ]]
+while [[ $# -gt 0 ]]
 do
     ENC_KEY="$1"
 
@@ -56,6 +56,7 @@ function enc_encrypt
 function enc_decrypt
 {
     # TODO
+    # DECRYPT, FIND OUT IF FILE IS TAR. IF YES, UNTAR IT, IF NOT, FINISH
     :
 }
 
@@ -94,7 +95,7 @@ fi
 if [ "$ENC_DECRYPT" == "yes" ]; then
     # enc_decrypt $ENC_INPUT_FILES $OUTPUT $ENC_PASSWORD
     echo $ENC_DECRYPT
-    exit 0
+    exit
 fi
 
 ### Encrypting
