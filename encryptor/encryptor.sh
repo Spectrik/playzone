@@ -41,15 +41,23 @@ done
 function enc_encrypt
 {
     FILENAME=$(basename $1)
-    tar czf - "$1" | openssl des3 -salt -pass pass:"$3" | dd of="$2/$FILENAME.encrypted" > /dev/null 2>&1
-    return 0
+    CONTAINING_FOLDER=$(dirname $1)
 
+    if ! tar cz - -C $CONTAINING_FOLDER $FILENAME | openssl des3 -e -salt -pass pass:"$3" | dd of="$2/$FILENAME.encrypted"; then
+        echo "Could not encrypt the input file!"
+        exit 1
+    fi
+
+    return 0
 }
 
 # decrypt function
 function enc_decrypt
 {
-    dd if="$1" | openssl des3 -d -pass pass:"$3" | tar -xzf -
+    if ! dd if="$1" | openssl des3 -d -pass pass:"$3" | tar -C "$2" -xzf -; then
+        echo "Could not decrypt input file!"
+        exit 1
+    fi
 }
 
 # Variables
@@ -79,8 +87,8 @@ if ! [ -e $ENC_INPUT_FILES ]; then
 fi
 
 if ! [ -e $ENC_OUTPUT ]; then
-    echo "Output folder does not exist!"
-    exit 1
+    echo "Output folder does not exist! Creating it now..."
+    mkdir -p $ENC_OUTPUT
 fi
 
 ### Decrypting
