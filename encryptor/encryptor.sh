@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# parse arguments
+# Parse arguments
 while [[ $# -gt 0 ]]
 do
     ENC_KEY="$1"
@@ -37,13 +37,13 @@ do
         shift
 done
 
-# encrypt function
+# Encrypt function
 function enc_encrypt
 {
     FILENAME=$(basename $1)
     CONTAINING_FOLDER=$(dirname $1)
 
-    if ! tar cz - -C $CONTAINING_FOLDER $FILENAME | openssl des3 -e -salt -pass pass:"$3" | dd of="$2/$FILENAME.encrypted"; then
+    if ! tar cz - -C $CONTAINING_FOLDER $FILENAME | openssl des3 -e -salt -pass pass:"$3" | dd of="$2/$FILENAME.encrypted" > /dev/null 2>&1; then
         echo "Could not encrypt the input file!"
         exit 1
     fi
@@ -51,7 +51,7 @@ function enc_encrypt
     return 0
 }
 
-# decrypt function
+# Decrypt function
 function enc_decrypt
 {
     if ! dd if="$1" | openssl des3 -d -pass pass:"$3" | tar -C "$2" -xzf -; then
