@@ -9,6 +9,16 @@
 
 ### Vars (default values)
 
+# Get IP address of container switch
+GET_IP=0
+GET_IP_CT_NAME=""
+
+# Use web interface for database?
+USE_ADMINER=0
+
+# HTTP local port to map to the port inside the CT
+ADMINER_LOCAL_PORT="8080"
+
 # Optional database dump file to restore
 DUMP_FILE=""
 
@@ -18,8 +28,8 @@ CT_NAME=""
 # Mariadb docker image to use
 MARIADB_DOCKER_IMG="mariadb"
 
-# Local port to map to the port inside the CT
-LOCAL_PORT_TO_MAP="6603"
+# Database local port to map to the port inside the CT
+DATABASE_LOCAL_PORT="6603"
 
 # Local datadir folder to map to the one inside the CT
 DB_LOCAL_DATADIR="$HOME/mysql"
@@ -62,7 +72,71 @@ show_help ()
     echo -e "\t\t--dump         Optional path to the database dump file to restore"
     echo -e "\t\t--ctname       Name of the container"
     echo -e "\t\t--datadir      Local datadir folder to map to the one inside the CT (default \$HOME/mysql)"
-    echo -e "\t\t--password     Mysql root password (default 123456)\n"
+    echo -e "\t\t--password     Mysql root password (default 123456)"
+    echo -e "\t\t--adminer      Run a web interface container to manage the database"
+    echo -e "\t\t--getip        Get local IP of the container based on its name in order to log into DB via adminer"  
+}
+
+# Check if container is running
+is_running ()
+{
+    if docker ps -a | grep "$1" > /dev/null; then
+        echo "There is already some container with name $1!"
+        return 0
+    fi
+
+    return 1
+}
+
+# Check if package is istalled
+package_exists ()
+{
+    if ! rpm -qa "$1" > /dev/null 2>&1; then
+        echo "$1 is probably not installed! Install it first, please."
+        exit 1
+    fi
+}
+
+# Get local IP of CT
+get_ip ()
+{
+    # Get the IP address of the CT
+    if [ "$GET_IP" -eq 1 ]; then
+        if [ -z "$GET_IP_CT_NAME" ]; then
+            echo "You need to provide a name of the container in order to get it's IP address!"
+            exit 1
+        fi
+
+        if ! docker ps --format '{{.Names}}' | grep -q "$GET_IP_CT_NAME"; then
+            echo "There is no container with name $GET_IP_CT_NAME"
+            exit 1
+        fi
+
+        docker inspect "$GET_IP_CT_NAME" --format '{{.NetworkSettings.Networks.bridge.IPAddress}}'
+        exit 1
+    fi
+}
+
+# Check if docker image exists locally
+image_exists ()
+{
+    if ! docker images | awk '{print $1}' | tail -n +2 | grep "$1" > /dev/null; then
+        echo "Could not find the database image! Trying to pull it now..."
+
+        if ! docker pull "$1"; then
+            echo "Could not pull the image $1"
+            exit 1
+        fi
+    fi
+}
+
+# Check if port is already taken
+port_taken ()
+{
+    if netstat -natp | grep docker-proxy | grep "$1" > /dev/null; then
+        echo "The port $1 is already being used by other container!"
+        exit 1
+    fi
 }
 
 # Checks
@@ -75,16 +149,10 @@ run_checks ()
     fi
 
     # Check if docker is installed
-    if ! rpm -qa docker > /dev/null 2>&1; then
-        echo "Docker is probably not installed! Install it first, please."
-        exit 1
-    fi
+    package_exists docker 
 
     # Check if jq is installed
-    if ! rpm -qa jq > /dev/null 2>&1; then
-        echo "jq is probably not installed! Install it first, please."
-        exit 1
-    fi
+    package_exists jq
 
     # Check if mysql-client is installed
     if ! which mysql > /dev/null 2>&1; then
@@ -92,13 +160,16 @@ run_checks ()
         exit 1
     fi
 
-    # Check if docker is running
+    # Check if docker daemon is running
     if ! systemctl status docker > /dev/null; then
         echo "Docker is probably not running!"
         systemctl status docker
 
         exit 1
     fi
+
+    # Get IP
+    get_ip
 
     # Check if the local datadir mount exists
     if [ -n "$DB_LOCAL_DATADIR" ]; then
@@ -123,20 +194,10 @@ run_checks ()
     fi
 
     # Check if we have the docker image
-    if ! docker images | awk '{print $1}' | tail -n +2 | grep "$MARIADB_DOCKER_IMG" > /dev/null; then
-        echo "Could not find the database image! Trying to pull it now..."
-
-        if ! docker pull "$MARIADB_DOCKER_IMG"; then
-            echo "Could not pull the image $MARIADB_DOCKER_IMG"
-            exit 1
-        fi
-    fi
+    image_exists "$MARIADB_DOCKER_IMG"
 
     # Check whether the port is already taken
-    if netstat -natp | grep docker-proxy | grep "$LOCAL_PORT_TO_MAP"; then
-        echo "The port $LOCAL_PORT_TO_MAP is already being used by other container!"
-        exit 1
-    fi
+    port_taken "$DATABASE_LOCAL_PORT"
 
     # Check datadir
     check_datadir
@@ -161,8 +222,12 @@ while [[ $# -gt 0 ]]; do
         ;;
 
         --port)
-            LOCAL_PORT_TO_MAP="$2"
+            DATABASE_LOCAL_PORT="$2"
             shift 
+        ;;
+
+        --adminer)
+            USE_ADMINER=1
         ;;
 
         --password)
@@ -173,6 +238,12 @@ while [[ $# -gt 0 ]]; do
         --dump)
             DUMP_FILE="$2"
             shift 
+        ;;
+
+        --getip)
+            GET_IP=1
+            GET_IP_CT_NAME="$2"
+            shift
         ;;
 
         --datadir)
@@ -195,14 +266,29 @@ done
 # Run all the neccessary checks
 run_checks
 
-# CT already existing?
-if docker ps -a | grep "$CT_NAME" > /dev/null; then
-    echo "There is already some container with name $CT_NAME!"
+# Run adminer?
+if [ "$USE_ADMINER" -eq 1 ]; then
+    
+    image_exists "adminer"
+    
+    if ! is_running "adminer"; then
+        if ! docker run --name adminer -d -p "$ADMINER_LOCAL_PORT":8080 adminer > /dev/null; then
+            echo "Could not start adminer container!"
+            exit 1
+        fi
+
+         # Give user the info
+        echo "You should be able to connect to adminer by going to http://127.0.0.1:$ADMINER_LOCAL_PORT"
+    fi
+fi
+
+# DB CT already existing?
+if is_running "$CT_NAME"; then
     exit 1
 fi
 
 # Starting the container
-if ! docker run -d --name "$CT_NAME" -p "$LOCAL_PORT_TO_MAP":3306 -e MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASS" -v "$DB_LOCAL_DATADIR":/var/lib/mysql "$MARIADB_DOCKER_IMG" > /dev/null; then
+if ! docker run -d --name "$CT_NAME" -p "$DATABASE_LOCAL_PORT":3306 -e MYSQL_ROOT_PASSWORD="$MYSQL_ROOT_PASS" -v "$DB_LOCAL_DATADIR":/var/lib/mysql "$MARIADB_DOCKER_IMG" > /dev/null; then
     echo "Could not start the container!"
     exit 1
 fi
@@ -215,11 +301,11 @@ sleep 5
 if [ -n "$DUMP_FILE" ]; then
     echo "Restoring the dump now..."
 
-    if ! mysql -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASS -P $LOCAL_PORT_TO_MAP < $DUMP_FILE; then
+    if ! mysql -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASS -P $DATABASE_LOCAL_PORT < $DUMP_FILE; then
         echo "Could not restore the DB dump!"
         exit 1
     fi
 fi
 
 # Give the user info
-echo "You should be able to connect to mysql console by running: mysql -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASS -P $LOCAL_PORT_TO_MAP"
+echo "You should be able to connect to mysql console by running: mysql -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASS -P $DATABASE_LOCAL_PORT"
