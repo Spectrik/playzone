@@ -74,6 +74,7 @@ show_help ()
     echo -e "\t\t--datadir      Local datadir folder to map to the one inside the CT (default \$HOME/mysql)"
     echo -e "\t\t--password     Mysql root password (default 123456)"
     echo -e "\t\t--adminer      Run a web interface container to manage the database"
+    echo -e "\t\t--adminerport  Local port to map to the adminer port inside the CT (default 8080)"
     echo -e "\t\t--getip        Get local IP of the container based on its name in order to log into DB via adminer"  
 }
 
@@ -221,6 +222,11 @@ while [[ $# -gt 0 ]]; do
             exit 0
         ;;
 
+        --adminerport)
+            ADMINER_LOCAL_PORT="$2"
+            shift
+        ;;
+        
         --port)
             DATABASE_LOCAL_PORT="$2"
             shift 
@@ -276,10 +282,10 @@ if [ "$USE_ADMINER" -eq 1 ]; then
             echo "Could not start adminer container!"
             exit 1
         fi
-
-         # Give user the info
-        echo "You should be able to connect to adminer by going to http://127.0.0.1:$ADMINER_LOCAL_PORT"
     fi
+
+    # Give user the info
+    echo "You should be able to connect to adminer by going to http://127.0.0.1:$ADMINER_LOCAL_PORT"
 fi
 
 # DB CT already existing?
