@@ -2,13 +2,12 @@
 
 # Author: ojanas@redhat.com
 
-# TODO: Desc
-# TODO: get rid of jq with docker inspect --format
+# Description: Script for fast deploying a mariadb container with an option of restoring SQL dump.
+#              It is also capable of deploying a web interface for DB managing called adminer.
 
 # Requires systemd based system
 # Requires RPM based package manager
 # Requires mysql-client
-# Requires jq
 
 ### Vars (default values)
 
@@ -45,7 +44,9 @@ MYSQL_ROOT_PASS="123456"
 # Show usage
 show_help ()
 {
-    echo -e "TODO: Short desc\n"
+    echo -e "\nDescription: Script for fast deploying a mariadb container with an option of restoring SQL dump.
+             It is also capable of deploying a web interface for DB managing called adminer.\n"
+
     echo -e "\tUsage:"
     echo -e "\t\t--port         Local port to map to the database port inside the CT (default 6603)"
     echo -e "\t\t--dump         Optional path to the database dump file to restore"
@@ -60,7 +61,6 @@ show_help ()
 # Get local IP of CT
 get_ip ()
 {
-    # Get the IP address of the CT
     if [ "$GET_IP" -eq 1 ]; then
         if [ -z "$GET_IP_CT_NAME" ]; then
             echo "You need to provide a name of the container in order to get it's IP address!"
@@ -72,6 +72,7 @@ get_ip ()
             exit 1
         fi
 
+        # Since the containers deployed by this script uses only one local IP, this should be fine
         docker inspect "$GET_IP_CT_NAME" --format '{{.NetworkSettings.Networks.bridge.IPAddress}}'
         exit 1
     fi
@@ -88,9 +89,6 @@ general_checks ()
 
     # Check if docker is installed
     package_exists docker 
-
-    # Check if jq is installed
-    package_exists jq
 
     # Check if mysql-client is installed
     if ! which mysql > /dev/null 2>&1; then
@@ -150,23 +148,24 @@ db_checks ()
 check_datadir()
 {
     local ID
-    local TMP
+    local MNT_CNT
 
     for ID in $(docker ps -a | awk '{print $1}' | tail -n +2)
     do
-        # Get the mount paths from the container
-        TMP=$(docker inspect $ID | jq '.[0].Mounts' | grep "Source")
 
-        # Skip the empty ones
-        if [ -z "$TMP" ]; then
-            continue
-        fi
+        # Count of mounts in a CT
+        MNT_CNT=$(($(docker inspect $ID --format '{{ json .Mounts}}' | grep Source -o | wc -l) -1 ))
 
-        # Tell the user
-        if echo "$TMP" | grep -q "$DB_LOCAL_DATADIR"; then
-            echo "The local mount $DB_LOCAL_DATADIR is probably already mounted in container $ID"
-            exit 1
-        fi
+        # Check every source of a mount
+        while [ "$MNT_CNT" -gt -1 ];
+        do
+            if docker inspect $ID --format "{{ (index .Mounts $MNT_CNT).Source}}" | grep -q "$DB_LOCAL_DATADIR"; then
+                echo "The local mount $DB_LOCAL_DATADIR is probably already mounted in container $ID"
+                exit 1
+            fi
+
+            ((--MNT_CNT))
+        done
     done
 }
 
