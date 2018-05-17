@@ -9,6 +9,8 @@
 # Requires RPM based package manager
 # Requires mysql-client
 
+# TODO: Fix checking the CT with same name i.e bleble bleble3
+
 ### Vars (default values)
 
 # Get IP address of container switch
@@ -47,15 +49,14 @@ show_help ()
     echo -e "\nDescription: Script for fast deploying a mariadb container with an option of restoring SQL dump.
              It is also capable of deploying a web interface for DB managing called adminer.\n"
 
-    echo -e "\tUsage:"
-    echo -e "\t\t--port         Local port to map to the database port inside the CT (default 6603)"
-    echo -e "\t\t--dump         Optional path to the database dump file to restore"
-    echo -e "\t\t--ctname       Name of the container"
-    echo -e "\t\t--datadir      Local datadir folder to map to the one inside the CT (default \$HOME/mysql)"
-    echo -e "\t\t--password     Mysql root password (default 123456)"
-    echo -e "\t\t--adminer      Deploy a web interface container to manage the database"
-    echo -e "\t\t--adminerport  Local port to map to the adminer port inside the CT (default 8080)"
-    echo -e "\t\t--getip        Get local IP of the container based on its name in order to log into DB via adminer"  
+    echo -e "Usage: ./db-ct.sh CT_NAME [OPTIONS]  Note: Please stick to the syntax, the arg parsing here is not so smart :-)\n" 
+    echo -e "\t--port         Local port to map to the database port inside the CT (default 6603)"
+    echo -e "\t--dump         Optional path to the database dump file to restore"
+    echo -e "\t--datadir      Local datadir folder to map to the one inside the CT (default \$HOME/mysql)"
+    echo -e "\t--password     Mysql root password (default 123456)"
+    echo -e "\t--adminer      Deploy a web interface container to manage the database"
+    echo -e "\t--adminerport  Local port to map to the adminer port inside the CT (default 8080)"
+    echo -e "\t--getip        Get local IP of the container based on its name in order to log into DB via adminer\n"
 }
 
 # Get local IP of CT
@@ -169,10 +170,10 @@ check_datadir()
     done
 }
 
-# Check if container is running
+# Check if there is a container running with the same name
 is_running ()
 {
-    if docker ps -a | grep "$1" > /dev/null; then
+    if docker ps -a --format '{{.Names}}' | egrep -q "^$1$"; then
         echo "There is already some container with name $1!"
         return 0
     fi
@@ -219,6 +220,12 @@ if [ $# -eq 0 ]; then
     exit 0
 fi
 
+# Process first arg as CT_NAME
+if ! echo "$1" | grep -q "\-\-"; then
+    CT_NAME="$1"
+    shift
+fi
+
 while [[ $# -gt 0 ]]; do
     KEY="$1"
 
@@ -261,11 +268,6 @@ while [[ $# -gt 0 ]]; do
 
         --datadir)
             DB_LOCAL_DATADIR="$2"
-            shift 
-        ;;
-
-        --ctname)
-            CT_NAME="$2"
             shift 
         ;;
 
@@ -315,7 +317,7 @@ sleep 5
 if [ -n "$DUMP_FILE" ]; then
     echo "Restoring the dump now..."
 
-    if ! mysql -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASS -P $DATABASE_LOCAL_PORT < $DUMP_FILE; then
+    if ! mysql -h 127.0.0.1 -u root -p$MYSQL_ROOT_PASS -P $DATABASE_LOCAL_PORT < "$DUMP_FILE"; then
         echo "Could not restore the DB dump!"
         exit 1
     fi
