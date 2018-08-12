@@ -65,7 +65,7 @@ x_msg "> Running pre-checks..."
 # Check for installed software
 is_installed hostapd || ( echo "It seems hostapd is not installed!"; exit 1 )
 is_installed dnsmasq || ( echo "It seems dnsmasq is not installed!"; exit 1 )
-is_installed iwlist || ( echo "It seems iwlist is not installed!"; exit 1 ) 1 )
+is_installed iwlist || ( echo "It seems iwlist is not installed!"; exit 1 )
 is_installed ip || ( echo "It seems ip utility is not installed!"; exit 1 )
 
 # Write PID file
@@ -92,7 +92,7 @@ if ps -ef | grep -i -q "networkmanager"; then
 fi
 
 # Make sure the interface is up
-ip link set dev "${INTERFACE} up"
+ip link set dev "${INTERFACE}" up
 
 x_msg "Checking for available networks..."
 
@@ -116,7 +116,7 @@ fi
 ### Get the network details
 x_msg "Gathering info about the network for our spoofer..."
 
-# Get the BSSID
+# Get the BSSID - TODO: FIX THE GREP - ASUS ASUS_5G
 AP_ADDRESS=$(iwlist "${INTERFACE}" scan | grep -i "${SSID}" -C5 | egrep -i -o "Address: .*" | cut -d " " -f 2)
 
 if [ -z "${AP_ADDRESS}" ]; then
