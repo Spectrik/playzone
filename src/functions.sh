@@ -33,3 +33,13 @@ function show_help {
     echo "THIS IS HELP!"
     exit 0
 }
+
+# Configure hostapd 
+function create_hostapd_conf {
+
+}
+
+# Configure dnsmasq
+function create_dnsmasq_conf {
+    
+}

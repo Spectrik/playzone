@@ -3,13 +3,14 @@
 # TODO: Create hostapd conf file
 # TODO: Create dnsmasq conf file
 # TODO: Parse the details about the network
+# TODO: Configure network password
 # TODO: Disconnect the clients from spoofed wifi so they can connect to ours
+# TODO: Check if interface card supports 5GHz
+# TODO: Non-reproducer mode. Just set up an access point
 # Configure hostapd, dnsmasq
 
 # Vars init
 CONF_FILE="../conf/shdvw.conf" ### This var only for debugging
-HOSTAPD_CONF_FILE="./hostapd.conf"
-DNSMASQ_CONF_FILE="./dnsmasq.conf"
 WIFI_NOT_FOUND=0
 
 # Set magic variables for current file & dir
@@ -105,7 +106,7 @@ do
         WIFI_NOT_FOUND=0
     fi
 
-    echo ".."
+    echo "."
 done
 
 # If network was not found
@@ -114,10 +115,10 @@ if [ ${WIFI_NOT_FOUND} -eq 1 ]; then
 fi
 
 ### Get the network details
-x_msg "Gathering info about the network for our spoofer..."
+x_msg "Gathering info about the network ${SSID} for our spoofer..."
 
 # Get the BSSID - TODO: FIX THE GREP - ASUS ASUS_5G
-AP_ADDRESS=$(iwlist "${INTERFACE}" scan | grep -i "${SSID}" -C5 | egrep -i -o "Address: .*" | cut -d " " -f 2)
+AP_ADDRESS=$(iwlist "${INTERFACE}" scan | egrep -i "${SSID}\"$" -C5 | egrep -i -o "Address: .*" | cut -d " " -f 2)
 
 if [ -z "${AP_ADDRESS}" ]; then
     x_msg "AP Info empty!" 1
@@ -126,13 +127,33 @@ fi
 # Gather data about the network. Put it to temporary file
 iwlist "${INTERFACE}" scan | grep "${AP_ADDRESS}" -A29 > "${TMPFILE_PATH}"
 
-# Parse the temp file for network details
-AP_FREQUENCY=""
-AP_CHANNEL=""
-AP_ENCRYPTION=""
+### Parse the temp file for network details
+
+# Get the channel
+AP_CHANNEL=$(egrep "Channel:.*" ${TMPFILE_PATH} | cut -d ":" -f 2)
+
+# Get the frequency
+if egrep -q -i -o "Frequency.*:2.4" ${TMPFILE_PATH}; then
+    AP_HWMODE="b"
+else
+    AP_HWMODE="ad"
+fi
+
+# Get the encryption details (WEP?, WPA, WPA2. TKIP, AES, TKIP+AES)
+# CCMP = AES
+AP_CIPHERS=$(egrep -i -o "Group Cipher.*" ${TMPFILE_PATH} | cut -d ":" -f 2)
+
+if grep "WPA2" ${TMPFILE_PATH}; then
+    AP_ENCRYPTION="WPA2"
+fi
+
+if grep "WPA" ${TMPFILE_PATH}; then
+    AP_ENCRYPTION="WPA"
+fi
 
 # Configure hostapd
 x_msg "> Creating hostapd configuration file..."
+create_hostapd_conf "${INTERFACE}" "${SSID}" "${AP_HWMODE}" "${AP_CHANNEL}" "${AP_ENCRYPTION}" "${AP_CIPHERS}" "${WIFI_PASS}"
 
 # Configure dnsmasq
 x_msg "> Creating dnsmasq configuration file..."
