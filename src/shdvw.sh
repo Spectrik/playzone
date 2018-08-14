@@ -2,12 +2,14 @@
 
 # TODO: Create hostapd conf file
 # TODO: Create dnsmasq conf file
-# TODO: Parse the details about the network
-# TODO: Configure network password
+# TODO: Parse the details about the network. Only the WEP/WPA/WPA2 part - possibly better solution
 # TODO: Disconnect the clients from spoofed wifi so they can connect to ours
 # TODO: Check if interface card supports 5GHz
 # TODO: Non-reproducer mode. Just set up an access point
-# Configure hostapd, dnsmasq
+# TODO: Arguments:
+# --clone
+# --disconnect
+# 
 
 # Vars init
 CONF_FILE="../conf/shdvw.conf" ### This var only for debugging
@@ -143,13 +145,17 @@ fi
 # CCMP = AES
 AP_CIPHERS=$(egrep -i -o "Group Cipher.*" ${TMPFILE_PATH} | cut -d ":" -f 2)
 
+# Here the order of grep is important. Or fix the regex :))
+if grep "WPA" ${TMPFILE_PATH}; then
+    AP_ENCRYPTION="WPA"
+fi
+
 if grep "WPA2" ${TMPFILE_PATH}; then
     AP_ENCRYPTION="WPA2"
 fi
 
-if grep "WPA" ${TMPFILE_PATH}; then
-    AP_ENCRYPTION="WPA"
-fi
+# Remove the temp file
+rm "${TMPFILE_PATH}"
 
 # Configure hostapd
 x_msg "> Creating hostapd configuration file..."
@@ -163,6 +169,8 @@ x_msg "> Starting hostapd..."
 
 # Starting dnsmasq
 x_msg "> Starting dnsmasq..."
+
+
 
 # Define trap
 
