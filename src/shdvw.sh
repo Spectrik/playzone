@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# TODO: Create hostapd conf file
 # TODO: Create dnsmasq conf file
+# TODO: Custom dns entries
 # TODO: Parse the details about the network. Only the WEP/WPA/WPA2 part - possibly better solution
 # TODO: Disconnect the clients from spoofed wifi so they can connect to ours
 # TODO: Check if interface card supports 5GHz
@@ -19,6 +19,9 @@ WIFI_NOT_FOUND=0
 __DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 __FILE="${__DIR}/$(basename "${BASH_SOURCE[0]}")"
 __BASE="$(basename ${__FILE} .sh)"
+
+# Only for debugging
+# set -o xtrace
 
 # Exit on error
 set -e
@@ -126,7 +129,7 @@ if [ -z "${AP_ADDRESS}" ]; then
     x_msg "AP Info empty!" 1
 fi
 
-# Gather data about the network. Put it to temporary file
+# Gath| tr -d '[:space:]'er data about the network. Put it to temporary file
 iwlist "${INTERFACE}" scan | grep "${AP_ADDRESS}" -A29 > "${TMPFILE_PATH}"
 
 ### Parse the temp file for network details
@@ -143,16 +146,20 @@ fi
 
 # Get the encryption details (WEP?, WPA, WPA2. TKIP, AES, TKIP+AES)
 # CCMP = AES
-AP_CIPHERS=$(egrep -i -o "Group Cipher.*" ${TMPFILE_PATH} | cut -d ":" -f 2)
+AP_CIPHERS=$(egrep -i -o "Group Cipher.*" ${TMPFILE_PATH} | cut -d ":" -f 2 | tr -d '[:space:]')
 
 # Here the order of grep is important. Or fix the regex :))
-if grep "WPA" ${TMPFILE_PATH}; then
+if grep -q "WPA" ${TMPFILE_PATH}; then
     AP_ENCRYPTION="WPA"
 fi
 
-if grep "WPA2" ${TMPFILE_PATH}; then
+if grep -q "WPA2" ${TMPFILE_PATH}; then
     AP_ENCRYPTION="WPA2"
 fi
+
+# Delete
+echo "${AP_CIPHERS}"
+echo "${AP_ENCRYPTION}"
 
 # Remove the temp file
 rm "${TMPFILE_PATH}"
@@ -160,6 +167,8 @@ rm "${TMPFILE_PATH}"
 # Configure hostapd
 x_msg "> Creating hostapd configuration file..."
 create_hostapd_conf "${INTERFACE}" "${SSID}" "${AP_HWMODE}" "${AP_CHANNEL}" "${AP_ENCRYPTION}" "${AP_CIPHERS}" "${WIFI_PASS}"
+
+sleep 150
 
 # Configure dnsmasq
 x_msg "> Creating dnsmasq configuration file..."
@@ -170,11 +179,7 @@ x_msg "> Starting hostapd..."
 # Starting dnsmasq
 x_msg "> Starting dnsmasq..."
 
-
-
 # Define trap
 
 # TODO: Remove PID, stop hostapd and dnsmasq on exit
 trap "rm ${PIDFILE}; kill ${HOSTAPD_PID}; kill ${DNSMASQ_PID} exit" EXIT SIGQUIT SIGINT SIGSTOP SIGTERM ERR
-
-sleep 15

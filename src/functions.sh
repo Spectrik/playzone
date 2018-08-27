@@ -44,6 +44,8 @@ function create_hostapd_conf {
     fi
 
     # Default stuff
+    echo "driver=nl80211" > ${HOSTAPD_CONF_FILE}
+    echo "country_code=CZ" >> ${HOSTAPD_CONF_FILE}
 
     # Argument stuff
     echo "interface=$1" >> ${HOSTAPD_CONF_FILE}
@@ -59,16 +61,19 @@ function create_hostapd_conf {
     # Encryption type related stuff
     case ${5} in
         "WEP")
-            # TODO
+            echo "auth_algs=2" >> ${HOSTAPD_CONF_FILE}
+            echo "wep_default_key=1" >> ${HOSTAPD_CONF_FILE}
+            echo "wep_key1=$7" >> ${HOSTAPD_CONF_FILE}
+
+            return 0
         ;;
 
         "WPA")
-            # TODO
-            # CCMP does not make sense here. TKIP only.
+            echo "wpa=1" >> ${HOSTAPD_CONF_FILE}
         ;;
 
         "WPA2")
-            # TODO
+            echo "wpa=2" >> ${HOSTAPD_CONF_FILE}
         ;;
     
         *)
@@ -76,14 +81,15 @@ function create_hostapd_conf {
         ;;
     esac
 
-    # Set the password
+    # Set the cipher & password
+    echo "auth_algs=1" >> ${HOSTAPD_CONF_FILE}
+    echo "wpa_pairwise=$6" >> ${HOSTAPD_CONF_FILE}
     echo -e "wpa_key_mgmt=WPA-PSK\nwpa_passphrase=$7" >> ${HOSTAPD_CONF_FILE}
 
     return 0
-
 }
 
 # Configure dnsmasq
 function create_dnsmasq_conf {
-
+    echo "todo"
 }
