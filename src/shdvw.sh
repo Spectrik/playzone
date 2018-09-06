@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# TODO: Create dnsmasq conf file
-# TODO: Custom dns entries
+# TODO: Custom dns entries - hosts to spoof
 # TODO: Parse the details about the network. Only the WEP/WPA/WPA2 part - possibly better solution
 # TODO: Disconnect the clients from spoofed wifi so they can connect to ours
 # TODO: Check if interface card supports 5GHz
+# TODO: HARD: Provide internet connection via second wireless interface (ip_forward, masquerading, default_gw)
 # TODO: Non-reproducer mode. Just set up an access point
 # TODO: Arguments:
 # --clone
@@ -168,18 +168,29 @@ rm "${TMPFILE_PATH}"
 x_msg "> Creating hostapd configuration file..."
 create_hostapd_conf "${INTERFACE}" "${SSID}" "${AP_HWMODE}" "${AP_CHANNEL}" "${AP_ENCRYPTION}" "${AP_CIPHERS}" "${WIFI_PASS}"
 
-sleep 150
-
 # Configure dnsmasq
 x_msg "> Creating dnsmasq configuration file..."
+create_dnsmasq_conf "${DHCP_IP_RANGE}" "${INTERFACE}"
+
+# sleep 150
 
 # Starting hostapd
 x_msg "> Starting hostapd..."
 
+if ! hostapd ${HOSTAPD_CONF_FILE} &;then
+    x_msg "hostapd failed to start!" 1
+fi
+
 # Starting dnsmasq
 x_msg "> Starting dnsmasq..."
+
+if ! $(which dnsmasq) --conf-file="${DNSMASQ_CONF_FILE}"; then
+    x_msg "dnsmasq failed to start!" 1
+fi
 
 # Define trap
 
 # TODO: Remove PID, stop hostapd and dnsmasq on exit
 trap "rm ${PIDFILE}; kill ${HOSTAPD_PID}; kill ${DNSMASQ_PID} exit" EXIT SIGQUIT SIGINT SIGSTOP SIGTERM ERR
+
+x_msg "It seems we are good to go!"

@@ -91,5 +91,36 @@ function create_hostapd_conf {
 
 # Configure dnsmasq
 function create_dnsmasq_conf {
-    echo "todo"
+    
+    local PREFIX
+    local GW
+    local RANGE
+
+    # Check argcount
+    if [ $# -ne 2 ]; then
+        x_msg "Wrong count of args passed to the create_dnsmasq_conf function!" 1
+    fi
+
+    if [ ${1: -2} != ".0" ]; then
+        x_msg "Wrong IP network format entered!" 1
+    fi
+
+    PREFIX=${1::-2}
+    GW="${PREFIX}.1"
+    RANGE="${PREFIX}.100,${PREFIX}.200,12h"
+
+    echo "dhcp-range=${RANGE}" > ${DNSMASQ_CONF_FILE}
+    echo "dhcp-option=3,${GW}" >> ${DNSMASQ_CONF_FILE}
+    echo "dhcp-option=6,${GW},8.8.8.8" >> ${DNSMASQ_CONF_FILE}
+    echo "no-resolv" >> ${DNSMASQ_CONF_FILE}
+    echo "interface=${2}" >> ${DNSMASQ_CONF_FILE}
+    echo "listen-address=${GW}" >> ${DNSMASQ_CONF_FILE}
+    echo "bind-interfaces" >> ${DNSMASQ_CONF_FILE}
+
+    # Assign the IP to the interface
+    if ! ip address show ${INTERFACE} | grep -q "${GW}/24"; then
+        if ! ip address add "${GW}/24" dev wlan1; then
+            x_msg "Could not assign the ${GW}/24 to ${INTERFACE} interface" 1
+        fi
+    fi
 }
