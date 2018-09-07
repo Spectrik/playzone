@@ -46,6 +46,8 @@ function create_hostapd_conf {
     # Default stuff
     echo "driver=nl80211" > ${HOSTAPD_CONF_FILE}
     echo "country_code=CZ" >> ${HOSTAPD_CONF_FILE}
+    echo "logger_syslog=-1" >> ${HOSTAPD_CONF_FILE}
+    echo "logger_syslog_level=2" >> ${HOSTAPD_CONF_FILE}
 
     # Argument stuff
     echo "interface=$1" >> ${HOSTAPD_CONF_FILE}
@@ -63,7 +65,10 @@ function create_hostapd_conf {
         "WEP")
             echo "auth_algs=2" >> ${HOSTAPD_CONF_FILE}
             echo "wep_default_key=1" >> ${HOSTAPD_CONF_FILE}
-            echo "wep_key1=$7" >> ${HOSTAPD_CONF_FILE}
+
+            if [ ${#7} -gt 0 ]; then
+                echo "wep_key1=$7" >> ${HOSTAPD_CONF_FILE}
+            fi
 
             return 0
         ;;
