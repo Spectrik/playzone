@@ -1,20 +1,18 @@
 #!/bin/bash
 
+# TODO: WEP
 # TODO: Custom dns entries - hosts to spoof
 # TODO: Parse the details about the network. Only the WEP/WPA/WPA2 part - possibly better solution
 # TODO: Disconnect the clients from spoofed wifi so they can connect to ours
-# TODO: Check if interface card supports 5GHz - wifi 'ad' mode
-# TODO: Provide internet connection via second wireless interface (ip_forward, masquerading, default_gw)
-# TODO: Non-reproducer mode. Just set up an access point
 # TODO: Logging
 # TODO: Write help
-# TODO: Fix the traps
 
 # Vars init
 WIFI_NOT_FOUND=0
 CLONE_AP=0
 DISCONNECT=0
 USE_DHCP=0
+PROVIDE_INTERNET=0
 
 # Set magic variables for current file & dir
 __DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -62,10 +60,13 @@ fi
 
 source "$1"
 
+# Trap - keep the PID file while this script starts stuff
+trap " [ -e ${PIDFILE} ] && rm ${PIDFILE}" SIGINT SIGTERM EXIT
+
 ### Arg parsing. $1 is positional argument - the configuration file. So shift it away.
 shift
  
-OPTS=$(getopt -o h --long help,clone,dhcp,disconnect,kill -n 'parse-options' -- "$@")
+OPTS=$(getopt -o h --long help,clone,dhcp,disconnect,kill,internet -n 'parse-options' -- "$@")
 
 if [ $? != 0 ] ; then echo "Failed parsing options." >&2 ; exit 1 ; fi
 
@@ -86,7 +87,6 @@ while true; do
 
     -h | --help)
         show_help
-        exit 0
     ;;
     
     --dhcp) 
@@ -96,6 +96,11 @@ while true; do
     
     --disconnect)
         DISCONNECT=1
+        shift
+    ;;
+
+    --internet)
+        PROVIDE_INTERNET=1
         shift
     ;;
 
@@ -124,8 +129,8 @@ is_installed dnsmasq || ( echo "It seems dnsmasq is not installed!"; exit 1 )
 is_installed iwlist || ( echo "It seems iwlist is not installed!"; exit 1 )
 is_installed ip || ( echo "It seems ip utility is not installed!"; exit 1 )
 
-# TODO: Check for any other dnsmasq or hostapd processes - FIX THIS
-if $(ps -ef | egrep -q "dnsmasq|hostapd"); then
+# Check for any other dnsmasq or hostapd processes
+if ps -ef | egrep "dnsmasq|hostapd" | grep -q -v "grep"; then
     x_msg "It seems that there are already some processes of hostapd or dnsmasq running. You might want to run this script with --kill option first" 1
 fi
 
@@ -155,6 +160,13 @@ fi
 # Make sure the interface is up
 if ! ip link set dev "${INTERFACE}" up; then
     x_msg  "There was a problem when setting the interface to UP status!"
+fi
+
+# Check if wifi interface supports 5GHz. More channels than 20? Has to be 5GHz
+if [ $(iwlist "${INTERFACE}" freq | grep -c "Channel") -gt 20 ]; then
+    AD_SUPPORT=1
+else
+    AD_SUPPORT=0
 fi
 
 ############# ACCESS POINT CLONING PART STARTS ################
@@ -226,6 +238,11 @@ else
     fi
 fi
 
+# No 5GHz AP for you
+if [ ${AP_HWMODE} == "ad" ] && [ ${AD_SUPPORT} -ne 1 ]; then
+    x_msg "It seems that this wifi interface does not support 5GHz thus you can not start access point on such a frequency!" 1
+fi
+
 # If type of encryption is not WEP, we always need the password
 if [ "${AP_ENCRYPTION}" != "WEP" ]; then
     
@@ -240,8 +257,8 @@ if [ "${AP_ENCRYPTION}" != "WEP" ]; then
 fi
 
 # Delete this - just for debugging
-echo "${AP_CIPHERS}"
-echo "${AP_ENCRYPTION}"
+# echo "${AP_CIPHERS}"
+# echo "${AP_ENCRYPTION}"
 
 # Remove the temp file
 if [ -e "${TMPFILE_PATH}" ]; then
@@ -256,14 +273,24 @@ create_hostapd_conf "${INTERFACE}" "${SSID}" "${AP_HWMODE}" "${AP_CHANNEL}" "${A
 x_msg "> Creating dnsmasq configuration file..."
 create_dnsmasq_conf "${DHCP_IP_RANGE}" "${INTERFACE}"
 
-# sleep 150
+# Do we want to provide internet connectivity?
+if [ ${PROVIDE_INTERNET} -eq 1 ]; then
+
+    # Make sure IP forwarding is enabled
+    echo 1 > /proc/sys/net/ipv4/ip_forward
+
+    # Set up masquerading
+    iptables -t nat -I POSTROUTING -s ${DHCP_IP_RANGE}/24 ! -d ${DHCP_IP_RANGE}/24 -j MASQUERADE
+
+    # NOTE: Default GW of the device must be set for the interface which has got the internet connectivity
+    # It is not gonna work otherwise
+fi
 
 # Starting hostapd
 x_msg "> Starting hostapd..."
 hostapd ${HOSTAPD_CONF_FILE} &
-HOSTAPD_PID=$(echo $$)
 
-# Give it some time to start the access point. Dnsmasq must be started after it is initialized
+# Give it some time to start the access point. Dnsmasq must be started after the hostapd is up & running.
 sleep 10
 
 # Do we want to use DHCP service?
@@ -275,9 +302,6 @@ if [ "${USE_DHCP}" -eq 1 ]; then
     if ! $(which dnsmasq) --conf-file="${DNSMASQ_CONF_FILE}"; then
         x_msg "dnsmasq failed to start!" 1
     fi
-
-    DNSMASQ_PID=$(echo $$)
 fi
 
-# Trap
-rm ${PIDFILE}
+x_msg "DONE!"
