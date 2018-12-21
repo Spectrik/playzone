@@ -1,1 +1,1 @@
-Readme file
+Ansible role for setting up freshly installed workstation machine.

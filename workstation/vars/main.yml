@@ -1,0 +1,8 @@
+---
+# vars file for workstation
+system_packages:
+  - mc
+  - htop
+  - git
+  - nano
+  - tcpdump

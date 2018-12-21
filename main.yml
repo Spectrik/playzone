@@ -1,0 +1,7 @@
+---
+- name: Set up my fresh workstation machine (RHEL based)
+  hosts: localhost
+  user: oj
+  roles:
+    - workstation
+...
