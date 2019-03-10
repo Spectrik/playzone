@@ -83,16 +83,19 @@ class Raspotify:
         
         if command == "next":
             self.pause_playback()
+
         elif command == "previous":
             self.play_previous_song()
+
         elif command == "pause":
             self.pause_playback()
+            
         elif command == "stop":
             self.start_playback()
 
     def run(self):
         """ Main function """
-        
+
         # Log info
         logging.info("Starting the main loop.")
 
