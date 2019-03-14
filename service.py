@@ -12,6 +12,8 @@ import time
 import spotipy
 import spotipy.util as util
 import os
+import functions
+
 
 class Raspotify:
    
@@ -125,13 +127,16 @@ class Raspotify:
 
         # Log info
         logging.info("Starting the main loop.")
-
+        
         # Get the socket
         socket = self.create_socket()        
 
         # Start listening
         socket.listen(1)
 
+        # After creating the socket, drop privileges
+        functions.drop_privileges()
+        
         # Authenticate
         self.authenticate()
 
