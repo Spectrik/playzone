@@ -1,0 +1,9 @@
+[Unit]
+Description=Spotify alarm socket
+PartOf=spalarm.service
+
+[Socket]
+ListenStream=/var/run/spalarm.sock
+
+[Install]
+WantedBy=sockets.target

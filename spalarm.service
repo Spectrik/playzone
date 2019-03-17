@@ -1,0 +1,13 @@
+[Unit]
+Description=Spotify alarm service
+After=network.target foo.socket
+Requires=spalarm.socket
+ConditionPathExists=/opt/foo/wouldbesysfsfile
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/spalarm.py
+TimeoutStopSec=5
+
+[Install]
+WantedBy=multi-user.target
