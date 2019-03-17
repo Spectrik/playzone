@@ -1,8 +1,7 @@
 [Unit]
 Description=Spotify alarm service
-After=network.target foo.socket
+After=network.target
 Requires=spalarm.socket
-ConditionPathExists=/opt/foo/wouldbesysfsfile
 
 [Service]
 Type=simple

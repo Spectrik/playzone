@@ -79,6 +79,12 @@ class RaspDaemon:
         try:
             command = str(data)
             command = command.lower()
+
+            # We do not want shit here
+            if len(command) > 10:
+                logging.error("The received command is too long!")
+                return
+
         except Exception as e:
             print(e)
 
@@ -121,27 +127,13 @@ class RaspDaemon:
         while True:
 
             try:
-                command = server.handle_request()
+                server.handle_request()
+                command = server.get_data()
+
             except BaseException as e:
-                print(e)
+                logging.error(e)
 
-            logging.info("The command we got is:" + command)
-            print(command)
+            logging.debug("The command we got is:" + str(command))
 
+            # Process the received command
             self.process_data(command)
-# Main
-if __name__ == "__main__":
-
-    # Load the configuration
-
-    # Set the level of logging
-    logging.basicConfig(level="INFO")
-
-    # Create the object
-    mainObj = RaspDaemon("11131855676", "cfa3f1960a626bef1caeb6c2e3338db25f6d8944", "spotify:user:spotify:playlist:37i9dQZF1DX6ziVCJnEm59")
-
-    # Authenticate
-    mainObj.authenticate()
-
-    # Run the shit!
-    mainObj.run()
