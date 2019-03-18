@@ -39,7 +39,7 @@ class RaspDaemon:
     # Authenticate to spotify webAPI
     def authenticate(self):
 
-        logging.debug("Trying to spotify authenticate...")
+        logging.debug("Trying to spotify authenticate.")
 
         # try:
         #     token = util.prompt_for_user_token(self.spotify_api_username, "user-modify-playback-state", redirect_uri='http://localhost/')
@@ -80,7 +80,7 @@ class RaspDaemon:
             command = str(data)
             command = command.lower()
 
-            # We do not want shit here
+            # We do not want any shit here
             if len(command) > 10:
                 logging.error("The received command is too long!")
                 return
@@ -125,15 +125,15 @@ class RaspDaemon:
 
         # Start listening for connections
         while True:
-
+            
+            # Handle each incoming connection
             try:
                 server.handle_request()
                 command = server.get_data()
-
-            except BaseException as e:
+            except Exception as e:
                 logging.error(e)
 
-            logging.debug("The command we got is:" + str(command))
+            logging.debug("The command we got is: " + str(command))
 
             # Process the received command
             self.process_data(command)

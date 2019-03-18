@@ -31,7 +31,7 @@ class MyServer(UnixStreamServer):
         # In this property, we will store the received data
         self.received_data = ''
 
-        # Invoke base but omit bind/listen steps (performed by systemd activation!)
+        # Call base constructor but omit bind / listen steps as they are performed by systemd activation
         UnixStreamServer.__init__(self, server_address, handler_cls, bind_and_activate=False)
         
         # Override socket with our, systemd one
