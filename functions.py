@@ -8,7 +8,8 @@ logging.basicConfig()
 logging.root.setLevel(level=logging.INFO)
 
 def drop_privileges(uid_name='nobody', gid_name='nobody'):
-
+    """ Function for dropping the privileges """
+    
     import os, pwd, grp
 
     starting_uid = os.getuid()
@@ -19,8 +20,6 @@ def drop_privileges(uid_name='nobody', gid_name='nobody'):
     log.info('drop_privileges: started as %s/%s' % \
              (pwd.getpwuid(starting_uid)[0],
               grp.getgrgid(starting_gid)[0]))
-
-    time.sleep(10)
 
     if os.getuid() != 0:
         log.info('drop_privileges: already running as %s' % starting_uid_name)
@@ -52,15 +51,9 @@ def drop_privileges(uid_name='nobody', gid_name='nobody'):
         log.info('drop_privileges: Old umask: %s, new umask: %s' % \
                  (oct(old_umask), oct(new_umask)))
 
-    time.sleep(10)
-
     final_uid = os.getuid()
     final_gid = os.getgid()
     
     log.info('drop_privileges: running as %s/%s' % \
              (pwd.getpwuid(final_uid)[0],
               grp.getgrgid(final_gid)[0]))
-
-# Test it
-if __name__ == '__main__':
-    drop_privileges()

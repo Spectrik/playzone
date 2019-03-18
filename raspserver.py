@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 from SocketServer import UnixStreamServer, StreamRequestHandler
 import logging
@@ -23,6 +23,7 @@ class MyServer(UnixStreamServer):
     def get_data(self):
         return self.received_data
 
+    # Constructor
     def __init__(self, server_address, handler_cls):
 
          # File descriptor for getting socket info by systemd

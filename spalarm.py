@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+# TODO: Parsing CLI arguments & Configuration
+# TODO: Spotify authorization
+# TODO: Cleanup the stuff when ending the program
+
 # CHECK: https://gist.github.com/cpaelzer/fc3abd28f81eda55ffb317bb4091bf48
 
 import raspdaemon

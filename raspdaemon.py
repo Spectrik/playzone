@@ -1,9 +1,5 @@
 #!/usr/bin/env python
 
-# TODO: Parsing CLI arguments & Configuration
-# TODO: Spotify authorization
-# TODO: Cleanup the stuff when ending the program
-
 # import spotipy
 # import spotipy.util as util
 import logging
@@ -20,9 +16,6 @@ class RaspDaemon:
 
         # Spotify playlist uri
         self.playlist_uri = playlist
-
-        # Buffer size
-        self.buffer_size = 2
 
         # Spotify username to log in
         self.spotify_api_username = username
@@ -81,8 +74,8 @@ class RaspDaemon:
             command = command.lower()
 
             # We do not want any shit here
-            if len(command) > 10:
-                logging.error("The received command is too long!")
+            if len(command) > self.max_command_length:
+                logging.warn("The received command is too long!")
                 return
 
         except Exception as e:
@@ -94,7 +87,7 @@ class RaspDaemon:
             # Run the command
             self.run_command(command)
         else:
-            logging.info("Unknown command: " + command)
+            logging.warn("Unknown command: " + command)
 
     def run_command(self, command):
         """ Run the specific command """
@@ -118,10 +111,13 @@ class RaspDaemon:
         logging.info("Starting the main loop.")
         
         # Get the server object
-        server = self.create_server("localhost", 9999)        
+        try:
+            server = self.create_server("localhost", 9999)
+        except Exception as e:
+            logging.error(e)
 
         # After creating the socket, drop privileges
-        # functions.drop_privileges()
+        functions.drop_privileges()
 
         # Start listening for connections
         while True:
