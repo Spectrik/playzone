@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-# import spotipy
-# import spotipy.util as util
+import spotipy
+import spotipy.util as util
 import logging
 import raspserver
 import functions
@@ -29,6 +29,9 @@ class RaspDaemon:
         # Are we authenticated?
         self.authenticated = False
 
+        # Spotify object
+        self.sp = None
+
     # Authenticate to spotify webAPI
     def authenticate(self):
 
@@ -38,23 +41,36 @@ class RaspDaemon:
         #     token = util.prompt_for_user_token(self.spotify_api_username, "user-modify-playback-state", redirect_uri='http://localhost/')
         # except spotipy.SpotifyException as e:
         #     logging.error(e)
-        #     sys.exit()
+        #     sys.exit(1)
 
-        # if token:
-        #     sp = spotipy.Spotify(auth=token)
-        #     self.authenticated = True
+        if token:
+            self.sp = spotipy.Spotify(auth=token)
+            self.authenticated = True
+            logging.info("Authenticated!")
 
     def play_next_song(self):
-        pass
+        try:
+            self.sp.next_track(self.spotify_device_id)
+        except Exception as e:
+            logging.error(e)
     
     def play_previous_song(self):
-        pass
+        try:
+            self.sp.previous_track(self.spotify_device_id)
+        except Exception as e:
+            logging.error(e)
 
     def pause_playback(self):
-        pass
+        try:
+            self.sp.pause_playback(self.spotify_device_id)
+        except Exception as e:
+            logging.error(e)
     
     def start_playback(self):
-        pass
+        try:
+            self.sp.start_playback(self.spotify_device_id)
+        except Exception as e:
+            logging.error(e)
     
     def create_server(self, host, port):
         """ Create the server handling our connections """
@@ -79,7 +95,7 @@ class RaspDaemon:
                 return
 
         except Exception as e:
-            print(e)
+            logging.error(e)
 
         # Is it an allowed command?
         if command in self.allowed_opts:
@@ -92,6 +108,12 @@ class RaspDaemon:
     def run_command(self, command):
         """ Run the specific command """
         
+        # If we are not authenticated
+        if not self.authenticated:
+            logging.error("Not authenticated!")
+            return
+
+        # Run specific command
         if command == "next":
             self.pause_playback()
 
