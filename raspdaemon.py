@@ -2,6 +2,7 @@
 
 import spotipy
 import spotipy.util as util
+import sys
 import logging
 import raspserver
 import functions
@@ -37,11 +38,12 @@ class RaspDaemon:
 
         logging.debug("Trying to spotify authenticate.")
 
-        # try:
-        #     token = util.prompt_for_user_token(self.spotify_api_username, "user-modify-playback-state", redirect_uri='http://localhost/')
-        # except spotipy.SpotifyException as e:
-        #     logging.error(e)
-        #     sys.exit(1)
+        try:
+            token = util.prompt_for_user_token(self.spotify_api_username, "user-modify-playback-state", redirect_uri='http://localhost/')
+        except spotipy.SpotifyException as e:
+            logging.error("Authentication failed!")
+            logging.error(e)
+            sys.exit(1)
 
         if token:
             self.sp = spotipy.Spotify(auth=token)
