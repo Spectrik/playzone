@@ -25,4 +25,4 @@
 
 <h1>Notes</h1>
 
-If you find any bugs or get any idea what/how to improve this, let me know at ojanas@redhat.com. Thanks!
+If you find any bugs or get any idea what/how to improve this, crete an issue. Thanks!
