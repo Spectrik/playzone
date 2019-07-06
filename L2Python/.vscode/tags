@@ -1,0 +1,53 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+ExternalStorage	../descriptors.py	/^class ExternalStorage:$/;"	kind:class	line:13
+MyRange	../iterators.py	/^class MyRange:$/;"	kind:class	line:33
+Person	../getters_setters.py	/^class Person:$/;"	kind:class	line:1
+Person	../getters_setters.py	/^class Person:$/;"	kind:class	line:20
+Point	../descriptors.py	/^class Point:$/;"	kind:class	line:3
+__call__	../decorators.py	/^    def __call__(self, *args, **kwargs):$/;"	kind:member	line:62
+__init__	../decorators.py	/^    def __init__(self, original_function):$/;"	kind:member	line:59
+__init__	../descriptors.py	/^    def __init__(self, x=0, y=0):$/;"	kind:member	line:8
+__init__	../getters_setters.py	/^    def __init__(self, name):$/;"	kind:member	line:22
+__init__	../getters_setters.py	/^    def __init__(self, name):$/;"	kind:member	line:3
+__init__	../iterators.py	/^    def __init__(self, start, end):$/;"	kind:member	line:35
+__iter__	../iterators.py	/^    def __iter__(self):$/;"	kind:member	line:39
+__next__	../iterators.py	/^    def __next__(self):$/;"	kind:member	line:43
+__slots__	../descriptors.py	/^    __slots__ = ("attribute_name")/;"	kind:variable	line:15
+__slots__	../descriptors.py	/^    __slots__ = ()$/;"	kind:variable	line:4
+bye_func	../decorators.py	/^bye_func = outer_function("Bye!")$/;"	kind:variable	line:14
+decorated_display	../decorators.py	/^decorated_display = decorator_function(display)$/;"	kind:variable	line:32
+decorator_class	../decorators.py	/^class decorator_class(object):$/;"	kind:class	line:57
+decorator_function	../decorators.py	/^def decorator_function(original_function):$/;"	kind:function	line:21
+decorators.py	../decorators.py	1;"	kind:file	line:1
+descriptors.py	../descriptors.py	1;"	kind:file	line:1
+display	../decorators.py	/^def display():$/;"	kind:function	line:28
+display	../decorators.py	/^def display():$/;"	kind:function	line:40
+display_info	../decorators.py	/^def display_info(name, age):$/;"	kind:function	line:48
+display_info	../decorators.py	/^def display_info(name, age):$/;"	kind:function	line:67
+generators.py	../generators.py	1;"	kind:file	line:1
+get_name	../getters_setters.py	/^    def get_name(self):$/;"	kind:member	line:25
+getters_setters.py	../getters_setters.py	1;"	kind:file	line:1
+hi_func	../decorators.py	/^hi_func = outer_function("Hi!")$/;"	kind:variable	line:13
+i_nums	../iterators.py	/^i_nums = iter(nums)$/;"	kind:variable	line:16
+inner_function	../decorators.py	/^    def inner_function():$/;"	kind:function	line:8
+item	../iterators.py	/^        item = next(i_nums)$/;"	kind:variable	line:27
+iterators.py	../iterators.py	1;"	kind:file	line:1
+my_nums	../generators.py	/^my_nums = square_numbers([1, 2, 3, 4, 5])$/;"	kind:variable	line:17
+my_nums2	../generators.py	/^my_nums2 = (x*x for x in [1, 2, 3, 4, 5])$/;"	kind:variable	line:14
+name	../getters_setters.py	/^    def name(self):$/;"	kind:member	line:7
+name	../getters_setters.py	/^    def name(self, name):$/;"	kind:member	line:12
+name	../getters_setters.py	/^    name = property(get_name, set_name)$/;"	kind:variable	line:33
+nums	../iterators.py	/^nums = [1, 2, 3]$/;"	kind:variable	line:5
+nums2	../iterators.py	/^nums2 = MyRange(1, 10)$/;"	kind:variable	line:53
+ondra	../getters_setters.py	/^ondra = Person("Ondra")$/;"	kind:variable	line:37
+outer_function	../decorators.py	/^def outer_function(msg):$/;"	kind:function	line:6
+set_name	../getters_setters.py	/^    def set_name(self, name):$/;"	kind:member	line:29
+square_numbers	../generators.py	/^def square_numbers(nums):$/;"	kind:function	line:4
+wrapper_function	../decorators.py	/^    def wrapper_function(*args, **kwargs):$/;"	kind:function	line:22
+x	../descriptors.py	/^    x = ExternalStorage("x")$/;"	kind:variable	line:5
+y	../descriptors.py	/^    y = ExternalStorage("y")$/;"	kind:variable	line:6
